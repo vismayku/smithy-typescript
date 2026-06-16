@@ -1,0 +1,84 @@
+# CBOR Performance Benchmarks
+
+Script: `yarn test:cbor:perf` in core.
+
+## Originally Released Implementation
+
+Baseline: `@smithy/core@3.25.0` (npm)
+
+```
+┌──────────────────────────────────┬──────────────┬────────┬────────┬────────────────────────┬─────────────────────┬─────────────────────────────────────┐
+│ (index)                          │ workload     │ cbor   │ json   │ cbor_serde             │ json_serde          │ cbor relative performance           │
+├──────────────────────────────────┼──────────────┼────────┼────────┼────────────────────────┼─────────────────────┼─────────────────────────────────────┤
+│ string                           │ '413kb x 60' │ '25mb' │ '25mb' │ '513mb/s, 370mb/s'     │ '218mb/s, 786mb/s'  │ '235% ->, <- 47%, 100% payload'     │
+│ list<string(0,180)>              │ '465kb x 60' │ '28mb' │ '28mb' │ '724mb/s, 977mb/s'     │ '784mb/s, 1762mb/s' │ '92% ->, <- 55%, 99% payload'       │
+│ list<float>                      │ '270kb x 60' │ '16mb' │ '40mb' │ '181mb/s, 295mb/s'     │ '78mb/s, 89mb/s'    │ '232% ->, <- 332%, 40% payload'     │
+│ list<double>                     │ '270kb x 60' │ '16mb' │ '42mb' │ '154mb/s, 295mb/s'     │ '69mb/s, 94mb/s'    │ '221% ->, <- 313%, 38% payload'     │
+│ byte[]                           │ '500kb x 60' │ '30mb' │ '40mb' │ '3165mb/s, 646558mb/s' │ '217mb/s, 131mb/s'  │ '1459% ->, <- 495334%, 75% payload' │
+│ list<int>                        │ '253kb x 60' │ '15mb' │ '27mb' │ '94mb/s, 164mb/s'      │ '157mb/s, 158mb/s'  │ '60% ->, <- 103%, 55% payload'      │
+│ list<long int>                   │ '250kb x 60' │ '15mb' │ '33mb' │ '210mb/s, 278mb/s'     │ '119mb/s, 141mb/s'  │ '177% ->, <- 198%, 46% payload'     │
+│ list<long long int>              │ '450kb x 60' │ '27mb' │ '66mb' │ '161mb/s, 108mb/s'     │ '76mb/s, 103mb/s'   │ '213% ->, <- 105%, 41% payload'     │
+│ map<string(0,30), string(0,450)> │ '446kb x 60' │ '27mb' │ '27mb' │ '749mb/s, 671mb/s'     │ '676mb/s, 1175mb/s' │ '111% ->, <- 57%, 99% payload'      │
+│ map<string(0,30), long int>      │ '37kb x 60'  │ '2mb'  │ '3mb'  │ '224mb/s, 101mb/s'     │ '211mb/s, 155mb/s'  │ '106% ->, <- 65%, 75% payload'      │
+│ list<struct> PutMetricData-like  │ '363kb x 60' │ '22mb' │ '28mb' │ '155mb/s, 77mb/s'      │ '250mb/s, 143mb/s'  │ '62% ->, <- 54%, 79% payload'       │
+│ list<struct> non-ASCII keys      │ '399kb x 60' │ '24mb' │ '29mb' │ '128mb/s, 86mb/s'      │ '211mb/s, 223mb/s'  │ '61% ->, <- 38%, 83% payload'       │
+└──────────────────────────────────┴──────────────┴────────┴────────┴────────────────────────┴─────────────────────┴─────────────────────────────────────┘
+```
+
+## June 2026 optimizations
+
+- **Integer encoding without BigInt**: integers > 32 bits are written as two
+  `setUint32` calls instead of allocating a `BigInt` for `setBigUint64`.
+  Tightened `ensureSpace` checks avoid redundant capacity calculations per
+  loop iteration.
+
+- **Generational string caches**: short strings
+  are cached as encoded/decoded values with 2048 capacity. Each `serialize()`/`deserialize()`
+  call advances a generation counter. Eviction is only allowed if the inhabitant is from a prior
+  generation.
+  - This handles two common categories of data:
+    - Data containing repeated shapes have their keys (and values, if enumerable) cached.
+    - Maps with many arbitrary string keys/values are prevented from thrashing the cache within in a single
+      generation.
+
+Current: `dist-cjs` (local build)
+
+```
+┌──────────────────────────────────┬──────────────┬────────┬────────┬────────────────────────┬─────────────────────┬─────────────────────────────────────┐
+│ (index)                          │ workload     │ cbor   │ json   │ cbor_serde             │ json_serde          │ cbor relative performance           │
+├──────────────────────────────────┼──────────────┼────────┼────────┼────────────────────────┼─────────────────────┼─────────────────────────────────────┤
+│ string                           │ '413kb x 60' │ '25mb' │ '25mb' │ '701mb/s, 369mb/s'     │ '218mb/s, 786mb/s'  │ '322% ->, <- 47%, 100% payload'     │
+│ list<string(0,180)>              │ '464kb x 60' │ '28mb' │ '28mb' │ '719mb/s, 1238mb/s'    │ '784mb/s, 1761mb/s' │ '92% ->, <- 70%, 99% payload'       │
+│ list<float>                      │ '270kb x 60' │ '16mb' │ '40mb' │ '273mb/s, 568mb/s'     │ '78mb/s, 89mb/s'    │ '351% ->, <- 639%, 40% payload'     │
+│ list<double>                     │ '270kb x 60' │ '16mb' │ '42mb' │ '266mb/s, 408mb/s'     │ '69mb/s, 94mb/s'    │ '383% ->, <- 434%, 38% payload'     │
+│ byte[]                           │ '500kb x 60' │ '30mb' │ '40mb' │ '3249mb/s, 346700mb/s' │ '217mb/s, 131mb/s'  │ '1498% ->, <- 265610%, 75% payload' │
+│ list<int>                        │ '253kb x 60' │ '15mb' │ '27mb' │ '96mb/s, 173mb/s'      │ '157mb/s, 158mb/s'  │ '61% ->, <- 109%, 55% payload'      │
+│ list<long int>                   │ '250kb x 60' │ '15mb' │ '33mb' │ '199mb/s, 291mb/s'     │ '119mb/s, 141mb/s'  │ '167% ->, <- 207%, 46% payload'     │
+│ list<long long int>              │ '450kb x 60' │ '27mb' │ '66mb' │ '311mb/s, 185mb/s'     │ '76mb/s, 103mb/s'   │ '411% ->, <- 179%, 41% payload'     │
+│ map<string(0,30), string(0,450)> │ '443kb x 60' │ '27mb' │ '27mb' │ '776mb/s, 793mb/s'     │ '671mb/s, 1165mb/s' │ '116% ->, <- 68%, 99% payload'      │
+│ map<string(0,30), long int>      │ '37kb x 60'  │ '2mb'  │ '3mb'  │ '235mb/s, 108mb/s'     │ '211mb/s, 155mb/s'  │ '111% ->, <- 70%, 75% payload'      │
+│ list<struct> PutMetricData-like  │ '363kb x 60' │ '22mb' │ '28mb' │ '239mb/s, 148mb/s'     │ '250mb/s, 143mb/s'  │ '96% ->, <- 104%, 79% payload'      │
+│ list<struct> non-ASCII keys      │ '399kb x 60' │ '24mb' │ '29mb' │ '295mb/s, 87mb/s'      │ '211mb/s, 223mb/s'  │ '140% ->, <- 39%, 83% payload'      │
+└──────────────────────────────────┴──────────────┴────────┴────────┴────────────────────────┴─────────────────────┴─────────────────────────────────────┘
+```
+
+## June 2026 incremental diff
+
+Blank deltas are <5% diff.
+
+`byte[]` is not truly measurable because there is no transformation in the serde layer.
+
+| Test case                         | Before (ser) | After (ser) | Δ ser | Before (de) | After (de) | Δ de |
+| --------------------------------- | ------------ | ----------- | ----- | ----------- | ---------- | ---- |
+| string                            | 513          | 701         | +37%  | 370         | 369        |      |
+| list\<string(0,180)>              | 724          | 719         |       | 977         | 1238       | +27% |
+| list\<float>                      | 181          | 273         | +51%  | 295         | 568        | +93% |
+| list\<double>                     | 154          | 266         | +73%  | 295         | 408        | +38% |
+| byte[]                            | n/a          | n/a         |       | n/a         | n/a        |      |
+| list\<int>                        | 94           | 96          |       | 164         | 173        | +5%  |
+| list\<long int>                   | 210          | 199         |       | 278         | 291        | +5%  |
+| list\<long long int>              | 161          | 311         | +93%  | 108         | 185        | +71% |
+| map\<string(0,30), string(0,450)> | 749          | 776         |       | 671         | 793        | +18% |
+| map\<string(0,30), long int>      | 224          | 235         | +5%   | 101         | 108        | +7%  |
+| list\<struct> PutMetricData-like  | 155          | 239         | +54%  | 77          | 148        | +92% |
+| list\<struct> non-ASCII keys      | 128          | 295         | +131% | 86          | 87         |      |
