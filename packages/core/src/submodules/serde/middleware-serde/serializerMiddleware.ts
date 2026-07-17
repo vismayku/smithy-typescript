@@ -42,7 +42,9 @@ export const serializerMiddleware =
      * This is okay because options is from the same client's resolved config,
      * and `endpoint` has been provided here by checking two sources.
      */
+    const serializationStart = Date.now();
     const request = await serializer(args.input, { ...options, endpoint } as CommandSerdeContext);
+    context.recorder?.addTime("SerializationTime", Date.now() - serializationStart);
 
     return next({
       ...args,

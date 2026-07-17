@@ -59,6 +59,7 @@ export function bindEndpointMiddleware(getEndpointFromConfig: GetEndpointFromCon
           setFeature(context, "ENDPOINT_OVERRIDE", "N");
         }
 
+        const endpointResolutionStart = Date.now();
         const endpoint: EndpointV2 = await getEndpointFromInstructions(
           args.input,
           {
@@ -69,6 +70,7 @@ export function bindEndpointMiddleware(getEndpointFromConfig: GetEndpointFromCon
           { ...config },
           context
         );
+        context.recorder?.addTime("EndpointResolutionTime", Date.now() - endpointResolutionStart);
 
         context.endpointV2 = endpoint;
         context.authSchemes = endpoint.properties?.authSchemes;

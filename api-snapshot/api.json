@@ -335,6 +335,11 @@
     "UnmarshalledStreamOptions": "type(object)",
     "UuidHeaderValue": "type(object)"
   },
+  "@smithy/core/metrics": {
+    "getMetricsPlugin": "function",
+    "metricsMiddleware": "function",
+    "metricsMiddlewareOptions": "object"
+  },
   "@smithy/core/protocols": {
     "buildQueryString": "function",
     "collectBody": "function",

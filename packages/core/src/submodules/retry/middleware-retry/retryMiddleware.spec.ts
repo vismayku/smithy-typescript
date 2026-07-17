@@ -152,6 +152,17 @@ describe(retryMiddleware.name, () => {
       expect(output.$metadata.attempts).toBe(1);
     });
 
+    it("records retry metrics on the context recorder when present", async () => {
+      const next = vi.fn().mockResolvedValueOnce(mockSuccess);
+      const recorder = { addCount: vi.fn(), addTime: vi.fn() };
+      await retryMiddleware({
+        maxAttempts: () => Promise.resolve(maxAttempts),
+        retryStrategy: vi.fn().mockResolvedValue({ ...mockRetryStrategy, maxAttempts }),
+      })(next, { ...context, recorder } as unknown as HandlerExecutionContext)(args as FinalizeHandlerArguments<any>);
+      expect(recorder.addCount).toHaveBeenCalledWith("RetryAttempts", expect.any(Number));
+      expect(recorder.addTime).toHaveBeenCalledWith("RetryDelay", expect.any(Number));
+    });
+
     describe("throws when token cannot be refreshed", () => {
       it("throw last request error", async () => {
         const requestError = new Error("mockRequestError");

@@ -159,6 +159,13 @@
       "node": "./dist-cjs/submodules/transport/index.js",
       "import": "./dist-es/submodules/transport/index.js",
       "require": "./dist-cjs/submodules/transport/index.js"
+    },
+    "./metrics": {
+      "types": "./dist-types/submodules/metrics/index.d.ts",
+      "module": "./dist-es/submodules/metrics/index.js",
+      "node": "./dist-cjs/submodules/metrics/index.js",
+      "import": "./dist-es/submodules/metrics/index.js",
+      "require": "./dist-cjs/submodules/metrics/index.js"
     }
   },
   "author": {
@@ -207,6 +214,8 @@
     "./endpoints.js",
     "./event-streams.d.ts",
     "./event-streams.js",
+    "./metrics.d.ts",
+    "./metrics.js",
     "./protocols.d.ts",
     "./protocols.js",
     "./retry.d.ts",

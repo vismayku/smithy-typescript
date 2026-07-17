@@ -70,10 +70,16 @@ export function bindRetryMiddleware(isStreamingPayload: IsStreamingPayload) {
             retryStrategy.recordSuccess(retryToken);
             output.$metadata.attempts = attempts + 1;
             output.$metadata.totalRetryDelay = totalRetryDelay;
+            context.recorder?.addCount("RetryAttempts", attempts);
+            context.recorder?.addTime("RetryDelay", totalRetryDelay);
             return { response, output };
           } catch (e: any) {
             const retryErrorInfo = getRetryErrorInfo(e, options.logger);
             lastError = asSdkError(e);
+
+            if (retryErrorInfo.errorType === "THROTTLING") {
+              context.recorder?.addCount("ThrottledExceptions", 1);
+            }
 
             if (isRequest && isStreamingPayload(request)) {
               (context.logger instanceof NoOpLogger ? console : context.logger)?.warn(
@@ -90,6 +96,8 @@ export function bindRetryMiddleware(isStreamingPayload: IsStreamingPayload) {
               }
               lastError.$metadata.attempts = attempts + 1;
               lastError.$metadata.totalRetryDelay = totalRetryDelay;
+              context.recorder?.addCount("RetryAttempts", attempts);
+              context.recorder?.addTime("RetryDelay", totalRetryDelay);
               throw lastError;
             }
             attempts = retryToken.getRetryCount();

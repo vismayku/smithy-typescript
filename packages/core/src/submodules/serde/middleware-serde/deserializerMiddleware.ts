@@ -31,7 +31,9 @@ export const deserializerMiddleware =
        * This is okay because options is from the same client's resolved config,
        * and the deserializer doesn't need the `endpoint` field.
        */
+      const deserializationStart = Date.now();
       const parsed = await deserializer(response, options as CommandSerdeContext);
+      context.recorder?.addTime("DeserializationTime", Date.now() - deserializationStart);
       return {
         response,
         output: parsed as Output,

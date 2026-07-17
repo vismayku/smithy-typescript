@@ -73,6 +73,13 @@ describe("deserializerMiddleware", () => {
     expect(mockDeserializer).toHaveBeenCalledWith(mockNextResponse.response, mockOptions);
   });
 
+  it("records deserialization time on the context recorder when present", async () => {
+    const recorder = { addTime: vi.fn() };
+    await deserializerMiddleware(mockOptions, mockDeserializer)(mockNext, { recorder } as any)(mockArgs);
+
+    expect(recorder.addTime).toHaveBeenCalledWith("DeserializationTime", expect.any(Number));
+  });
+
   it("injects non-enumerable $response reference to deserializing exceptions", async () => {
     const exception = Object.assign(new Error("MockException"), mockNextResponse.response);
     mockDeserializer.mockReset();

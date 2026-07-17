@@ -60,4 +60,11 @@ describe("serializerMiddleware", () => {
     expect(mockNext).toHaveBeenCalledTimes(1);
     expect(mockNext).toHaveBeenCalledWith({ ...mockArgs, request: mockRequest });
   });
+
+  it("records serialization time on the context recorder when present", async () => {
+    const recorder = { addTime: vi.fn() };
+    await serializerMiddleware(mockOptions, mockSerializer)(mockNext, { recorder } as any)(mockArgs);
+
+    expect(recorder.addTime).toHaveBeenCalledWith("SerializationTime", expect.any(Number));
+  });
 });
