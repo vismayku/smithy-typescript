@@ -578,20 +578,16 @@ export interface HandlerExecutionContext {
     selectedHttpAuthScheme?: SelectedHttpAuthScheme;
     features?: SmithyFeatures;
     /**
+     * The request-scoped metrics recorder selected for this client call.
+     */
+    metricsRecorder?: MetricsRecorder<unknown>;
+    /**
      * @deprecated
      * Do not assign arbitrary members to the Smithy Context,
      * fields should be explicitly declared here to avoid collisions.
      */
     [key: string]: unknown;
   };
-
-  /**
-   * A per-request {@link MetricsRecorder} supplied at the `client.send(command, { recorder })`
-   * call site. When present, a metrics middleware records into this recorder instead of one
-   * minted from a factory, letting a caller (e.g. a server handler) fold the client's request
-   * metrics into its own.
-   */
-  recorder?: MetricsRecorder<any>;
 
   /**
    * Set by some operations which instructs the retry behavior to backoff

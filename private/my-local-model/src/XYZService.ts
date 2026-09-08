@@ -63,7 +63,7 @@ const waiters = {
  * @public
  */
 export interface XYZServiceRequestOptions extends __HttpHandlerOptions {
-  recorder?: __MetricsRecorder<any>;
+  metricsRecorder?: __MetricsRecorder<unknown>;
 }
 
 export interface XYZService {

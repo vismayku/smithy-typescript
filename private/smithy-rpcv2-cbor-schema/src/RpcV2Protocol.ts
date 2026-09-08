@@ -85,7 +85,7 @@ const commands = {
  * @public
  */
 export interface RpcV2ProtocolRequestOptions extends __HttpHandlerOptions {
-  recorder?: __MetricsRecorder<any>;
+  metricsRecorder?: __MetricsRecorder<unknown>;
 }
 
 export interface RpcV2Protocol {

@@ -1,4 +1,5 @@
 import { describe, expect, test as it, vi } from "vitest";
+import { SMITHY_CONTEXT_KEY } from "@smithy/types";
 
 import { Command } from "./command";
 
@@ -91,31 +92,52 @@ describe(Command.name, () => {
     });
   });
 
-  it("places the call-site recorder on the handler execution context", async () => {
+  it("places an externally owned recorder in the Smithy context and does not pass it to the transport", async () => {
     let capturedContext: any;
+    const handleFn = vi.fn().mockResolvedValue({ response: {} });
+    const existingMetricsRecorder = { addCount: vi.fn() };
 
     class MyCommand extends Command.classBuilder<any, any, any, any, any>()
       .m(function () {
         return [];
       })
       .s("MyClient", "MyOp", {})
+      .c({ [SMITHY_CONTEXT_KEY]: { customContext: true, metricsRecorder: existingMetricsRecorder } } as any)
       .n("MyClient", "MyOp")
       .f()
       .ser(async (_) => ({ ..._, headers: {}, method: "POST", protocol: "https:", hostname: "localhost", path: "/" }))
       .de(async (_) => ({ $metadata: {} }))
       .build() {}
 
-    const recorder = { addCount: vi.fn() };
+    const metricsRecorder = { addCount: vi.fn() };
     const cmd = new MyCommand({});
-    cmd.resolveMiddleware(
+    const handler = cmd.resolveMiddleware(
       { concat: () => ({ resolve: (fn: any, ctx: any) => ((capturedContext = ctx), fn) }) } as any,
       {
         logger: {} as any,
-        requestHandler: { handle: vi.fn().mockResolvedValue({ response: {} }) },
+        requestHandler: { handle: handleFn },
       },
-      { recorder }
+      { metricsRecorder, requestTimeout: 5000 }
     );
 
-    expect(capturedContext.recorder).toBe(recorder);
+    await handler({ input: {} });
+
+    expect(capturedContext[SMITHY_CONTEXT_KEY]).toMatchObject({
+      customContext: true,
+      metricsRecorder,
+    });
+    expect(capturedContext.metricsRecorder).toBeUndefined();
+    expect(handleFn).toHaveBeenCalledWith(undefined, { requestTimeout: 5000 });
+
+    new MyCommand({}).resolveMiddleware(
+      { concat: () => ({ resolve: (fn: any, ctx: any) => ((capturedContext = ctx), fn) }) } as any,
+      {
+        logger: {} as any,
+        requestHandler: { handle: handleFn },
+      },
+      {}
+    );
+
+    expect(capturedContext[SMITHY_CONTEXT_KEY].metricsRecorder).toBe(existingMetricsRecorder);
   });
 });

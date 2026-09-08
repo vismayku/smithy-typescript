@@ -146,7 +146,7 @@ final class ServiceAggregatedClientGenerator implements Runnable {
             requestOptionsType,
             applicationProtocol.getOptionsType(),
             () -> {
-                writer.write("recorder?: __MetricsRecorder<any>;");
+                writer.write("metricsRecorder?: __MetricsRecorder<unknown>;");
             }
         );
         writer.write("");

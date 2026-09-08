@@ -42,7 +42,7 @@ public class ServiceAggregatedClientGeneratorTest {
 
         // A named, readable options type is generated (superset of the transport options).
         assertThat(contents, containsString("export interface ExampleRequestOptions extends __HttpHandlerOptions"));
-        assertThat(contents, containsString("recorder?: __MetricsRecorder<any>;"));
+        assertThat(contents, containsString("metricsRecorder?: __MetricsRecorder<unknown>;"));
         // Convenience methods reference the named type rather than an inline composed type.
         assertThat(contents, containsString("options?: ExampleRequestOptions"));
         assertThat(contents, containsString("options: ExampleRequestOptions"));
