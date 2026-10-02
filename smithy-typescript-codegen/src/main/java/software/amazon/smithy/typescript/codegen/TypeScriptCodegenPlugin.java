@@ -77,7 +77,7 @@ public class TypeScriptCodegenPlugin implements SmithyBuildPlugin {
         execute(context, settings);
     }
 
-    void execute(PluginContext context, TypeScriptSettings settings) {
+    private void execute(PluginContext context, TypeScriptSettings settings) {
         if (settings.generateTypes() && !settings.isTypesOnly()) {
             // TODO: Combined mode (types alongside client/server) requires generating schemas over
             // the full connected-shape closure. Keep the mode set in settings so dispatch can be

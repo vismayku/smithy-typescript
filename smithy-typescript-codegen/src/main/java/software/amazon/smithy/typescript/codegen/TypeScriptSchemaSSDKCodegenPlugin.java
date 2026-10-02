@@ -25,12 +25,6 @@ public class TypeScriptSchemaSSDKCodegenPlugin implements SmithyBuildPlugin {
 
     @Override
     public void execute(PluginContext context) {
-        TypeScriptSettings settings = TypeScriptSettings.from(
-            context.getModel(),
-            context.getSettings(),
-            TypeScriptSettings.ArtifactType.SSDK
-        );
-        settings.setGenerateServerSchema(true);
-        new TypeScriptCodegenPlugin().execute(context, settings);
+        new TypeScriptCodegenPlugin().execute(context, TypeScriptSettings.ArtifactType.SSDK);
     }
 }

@@ -132,7 +132,13 @@ public class TypeScriptCodegenPluginTest {
 
         new TypeScriptCodegenPlugin().execute(context);
 
-        assertTrue(manifest.hasFile(CodegenUtils.SOURCE_FOLDER + "/server/ExampleService.ts"));
+        String handlerFile = CodegenUtils.SOURCE_FOLDER + "/server/ExampleHandler.ts";
+        assertTrue(manifest.hasFile(handlerFile));
+        assertThat(
+            manifest.getFileString(handlerFile).get(),
+            containsString("validationEnabled: runtimeOptions.validationEnabled ?? false,")
+        );
+        assertFalse(manifest.hasFile(CodegenUtils.SOURCE_FOLDER + "/server/ExampleService.ts"));
         assertFalse(manifest.hasFile(CodegenUtils.SOURCE_FOLDER + "/ExampleClient.ts"));
     }
 
@@ -163,7 +169,7 @@ public class TypeScriptCodegenPluginTest {
     }
 
     @Test
-    public void dedicatedPluginGeneratesSchemaServerBaseExceptionWithoutProtocolGenerator() {
+    public void alwaysGeneratesSchemaServerBaseExceptionWithoutProtocolGenerator() {
         Model model = Model.assembler()
             .addUnparsedModel(
                 "custom-protocol.smithy",
@@ -202,12 +208,14 @@ public class TypeScriptCodegenPluginTest {
                     .withMember("service", Node.from("example#Custom"))
                     .withMember("package", Node.from("custom-server"))
                     .withMember("packageVersion", Node.from("1.0.0"))
+                    .withMember("modes", Node.fromStrings("server"))
                     .withMember("disableDefaultValidation", Node.from(true))
+                    .withMember("generateSchemas", Node.from(false))
                     .build()
             )
             .build();
 
-        new TypeScriptSchemaSSDKCodegenPlugin().execute(context);
+        new TypeScriptCodegenPlugin().execute(context);
 
         String exceptionFile = CodegenUtils.SOURCE_FOLDER + "/models/CustomServiceServiceException.ts";
         String schemasFile = CodegenUtils.SOURCE_FOLDER + "/schemas/schemas_0.ts";

@@ -21,7 +21,7 @@ import software.amazon.smithy.typescript.codegen.schema.SchemaServerGenerator;
 public class SchemaServerGeneratorTest {
 
     @Test
-    public void generatesConstructorFacadeForSchemaServerMode() {
+    public void serverSchemaModeIsUnconditionalAndGeneratesConstructorFacade() {
         Model model = Model.assembler()
             .discoverModels()
             .addUnparsedModel(
@@ -55,7 +55,6 @@ public class SchemaServerGeneratorTest {
                 .build(),
             TypeScriptSettings.ArtifactType.SSDK
         );
-        settings.setGenerateServerSchema(true);
         ServiceShape service = model.expectShape(
             ShapeId.from("example#ExampleService"),
             ServiceShape.class
