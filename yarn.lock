@@ -4914,7 +4914,6 @@ __metadata:
   resolution: "interceptor-example-ssdk@workspace:private/interceptor-example-ssdk"
   dependencies:
     "@smithy/core": "workspace:^"
-    "@smithy/node-http-handler": "workspace:^"
     "@smithy/server-common": "workspace:^"
     "@smithy/types": "workspace:^"
     "@tsconfig/node20": "npm:20.1.8"
